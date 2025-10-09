@@ -160,16 +160,26 @@ type HomeProps = {
 export function Home({ setActiveTab }: HomeProps) {
   return (
     <div className="space-y-6 animate-fade-in">
-      <Card title="My First Mini App">
+      <Card title="MiniCraft Store">
         <p className="text-[var(--app-foreground-muted)] mb-4">
-          This is a minimalistic Mini App built with OnchainKit components.
+          Welcome to MiniCraft - your Web3 marketplace built on Base with MiniKit. 
+          Discover Filecoin merchandise, NFTs, and more!
         </p>
-        <Button
-          onClick={() => setActiveTab("features")}
-          icon={<Icon name="arrow-right" size="sm" />}
-        >
-          Explore Features
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button
+            onClick={() => setActiveTab("features")}
+            icon={<Icon name="arrow-right" size="sm" />}
+          >
+            Explore Features
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => window.open('/products', '_blank')}
+            icon={<Icon name="star" size="sm" />}
+          >
+            Browse Store
+          </Button>
+        </div>
       </Card>
 
       <TodoList />

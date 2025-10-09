@@ -1,6 +1,12 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
-import { ChevronRight, Filter } from "lucide-react"
+import { ChevronRight, Filter, ShoppingCart, Loader2 } from "lucide-react"
+import { useWeb3 } from "../context/Web3Context"
+import { useAccount } from "wagmi"
+import { formatEther } from "viem"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,6 +18,24 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 
 export default function ProductsPage() {
+  const { address, isConnected } = useAccount()
+  const { purchaseProduct, isLoading } = useWeb3()
+
+  const handlePurchase = async (productId: number, price: number) => {
+    if (!isConnected) {
+      toast.error("Please connect your wallet first")
+      return
+    }
+
+    try {
+      await purchaseProduct(productId, price.toString())
+      toast.success("Product purchased successfully!")
+    } catch (error) {
+      console.error("Purchase error:", error)
+      toast.error("Failed to purchase product. Please try again.")
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
@@ -19,7 +43,12 @@ export default function ProductsPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">All Products</h1>
-              <p className="text-muted-foreground">Browse our collection of Filecoin merchandise</p>
+              <p className="text-muted-foreground">
+                {isConnected 
+                  ? `Browse our collection of Filecoin merchandise - Connected as ${address?.slice(0, 6)}...${address?.slice(-4)}`
+                  : "Browse our collection of Filecoin merchandise - Connect wallet to purchase"
+                }
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <Sheet>
@@ -178,30 +207,55 @@ export default function ProductsPage() {
             <div className="col-span-1 md:col-span-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {allProducts.map((product) => (
-                  <Link href={`/products/${product.id}`} key={product.id} className="group">
-                    <Card className="overflow-hidden transition-all hover:shadow-lg">
-                      <div className="relative aspect-square">
-                        <Image
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          fill
-                          className="object-cover transition-transform group-hover:scale-105"
-                        />
-                        {product.badge && <Badge className="absolute top-2 right-2 bg-teal-600">{product.badge}</Badge>}
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-lg">{product.name}</h3>
-                        <p className="text-muted-foreground text-sm">{product.description}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="font-bold">${product.price.toFixed(2)}</span>
-                          <Button variant="ghost" size="sm" className="text-teal-600">
-                            View
-                            <ChevronRight className="h-4 w-4 ml-1" />
+                  <Card key={product.id} className="overflow-hidden transition-all hover:shadow-lg">
+                    <div className="relative aspect-square">
+                      <Image
+                        src={product.image || "/placeholder.svg"}
+                        alt={product.name}
+                        fill
+                        className="object-cover transition-transform hover:scale-105"
+                      />
+                      {product.badge && <Badge className="absolute top-2 right-2 bg-teal-600">{product.badge}</Badge>}
+                      {product.category === "Collectibles" && (
+                        <Badge className="absolute top-2 left-2 bg-purple-600">NFT</Badge>
+                      )}
+                    </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-lg">{product.name}</h3>
+                      <p className="text-muted-foreground text-sm">{product.description}</p>
+                      <div className="flex items-center justify-between mt-4">
+                        <span className="font-bold text-lg">${product.price.toFixed(2)}</span>
+                        <div className="flex gap-2">
+                          <Link href={`/products/${product.id}`}>
+                            <Button variant="outline" size="sm">
+                              View
+                              <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                          </Link>
+                          <Button 
+                            size="sm" 
+                            className="bg-teal-600 hover:bg-teal-700"
+                            onClick={() => handlePurchase(product.id, product.price)}
+                            disabled={!isConnected || isLoading}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <ShoppingCart className="h-4 w-4 mr-1" />
+                                Buy
+                              </>
+                            )}
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                      </div>
+                      {!isConnected && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Connect wallet to purchase
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
 
